@@ -47,12 +47,15 @@ from deepracer_interfaces_pkg.msg import (ServoCtrlMsg,
 from deepracer_interfaces_pkg.srv import (LoadModelSrv,
                                           NavThrottleSrv)
 from deepracer_navigation_pkg import constants
+from std_msgs.msg import Header
 
 
 class DRNavigationNode(Node):
     """Node responsible for converting the output of the RL model and mapping
        it to throttle and steering values.
     """
+
+    _frame = 0
 
     def __init__(self):
         """Create a DRNavigationNode.
@@ -111,6 +114,14 @@ class DRNavigationNode(Node):
             servo (ServoCtrlMsg): Message to be published to the servo with all
                                   relevant servo data.
         """
+        # Define the header
+        self._frame += 1
+
+        servo_msg.correlation = inference_msg.images[0].header
+        servo_msg.header = Header()
+        servo_msg.header.stamp = self.get_clock().now().to_msg()
+        servo_msg.header.frame_id = str(self._frame)
+
         # Negative value moves the car forward, positive values move the car backwards
         servo_msg.throttle = self.throttle_scale
         try:
